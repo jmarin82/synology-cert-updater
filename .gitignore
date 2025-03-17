@@ -1,0 +1,26 @@
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Configuración de VS Code
+.vscode/
+
+# Archivos de entorno
+.env
+*.secret
+
+# Dependencias
+venv/
+node_modules/
+
+# Archivos de Docker
+docker/*.log
+docker-compose.override.yml
+
+# Archivos de pruebas
+debug/
+
+# Secrets
+secrets/
