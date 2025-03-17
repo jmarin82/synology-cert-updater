@@ -1,0 +1,35 @@
+export DOCKER_BUILDKIT=1
+brew services start docker
+
+# Construir la imagen
+docker build -t synology-cert-updater:latest .
+# el anterior comando me crea la imagen para arm64 porque estoy en un Mac M1. Vamos a hacerla compatible con cualquier plataforma
+docker buildx build --platform linux/amd64,linux/arm64 -t registry.rl28.net:5000/synology-cert-updater:latest . --push
+docker tag synology-cert-updater:latest registry.rl28.net:5000/synology-cert-updater:latest
+docker push registry.rl28.net:5000/synology-cert-updater:latest
+
+
+# (Opcional) Probar la imagen localmente
+docker run --rm -e SYNOLOGY_URL="https://192.168.1.10:5001" \
+    -e SYNOLOGY_USER="jmarin" \
+    -e SYNOLOGY_PASS="POIpoi098rl28" \
+    -e SECRET_NAME="rl28-lrm.duckdns.org-wildcard-tls-secret-production" \
+    -e SECRET_NAMESPACE="test-web" \
+    -e COMMON_NAME="*.rl28-lrm.duckdns.org" \
+    cert-updater:latest
+
+docker push 192.168.1.203:5000/cert-updater:latest
+
+curl http://192.168.1.203:5000/v2/_catalog
+
+Si en el futuro quieres liberar espacio de imágenes antiguas no referenciadas:
+docker exec -it <registry-pod> bin/registry garbage-collect /etc/docker/registry/registry-config.yaml
+
+docker buildx build --platform linux/amd64,linux/arm64 -t registry.rl28.net:5000/synology-cert-updater:latest --push
+
+
+docker build -t synology-cert-updater:latest --platform=linux/x86_64 .
+
+
+docker buildx build --platform linux/amd64 -t registry.rl28.net:5000/synology-cert-updater:latest . --load
+docker push registry.rl28.net:5000/synology-cert-updater:latest

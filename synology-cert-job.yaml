@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: synology-update-cert
+  namespace: cert-manager
+spec:
+  ttlSecondsAfterFinished: 3600  # Mantiene el Pod durante 10 minutos después de completado
+  template:
+    spec:
+      containers:
+      - name: synology-cert-updater
+        image: registry.rl28.net:5000/synology-cert-updater:latest
+        # securityContext:
+        #     privileged: true
+        env:
+        - name: SYNOLOGY_URL
+          value: "https://192.168.1.10:5001"
+        - name: SYNOLOGY_USER
+          valueFrom:
+            secretKeyRef:
+              name: synology-credentials
+              key: username
+        - name: SYNOLOGY_PASS
+          valueFrom:
+            secretKeyRef:
+              name: synology-credentials
+              key: password
+        - name: SECRET_NAME
+          value: "rl28-lrm.duckdns.org-wildcard-tls-secret-production"
+        - name: SECRET_NAMESPACE
+          value: "cert-manager"
+        - name: COMMON_NAME
+          value: "*.rl28-lrm.duckdns.org"
+        - name: KUBECONFIG_MODE
+          value: "incluster"
+        volumeMounts:
+        - name: kube-api-access
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+      restartPolicy: OnFailure
+      serviceAccountName: synology-updater-sa
+      volumes: # necesario para acceder al API de k3s
+      - name: kube-api-access
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 3600
+          - configMap:
+              name: kube-root-ca.crt # Add this line
+              items:
+                - key: ca.crt
+                  path: ca.crt

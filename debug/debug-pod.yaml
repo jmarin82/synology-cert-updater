@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-container
+  namespace: cert-manager
+spec:
+  containers:
+    - name: debug-container
+      image: alpine
+      command: ["sleep", "3600"]  # Mantiene el contenedor en ejecución
+    - name: synology-cert-updater
+      image: registry.rl28.net:5000/synology-cert-updater:latest
+      env:
+      - name: SYNOLOGY_URL
+        value: "https://192.168.1.10:5001"
+      - name: SYNOLOGY_USER
+        valueFrom:
+          secretKeyRef:
+            name: synology-credentials
+            key: username
+      - name: SYNOLOGY_PASS
+        valueFrom:
+          secretKeyRef:
+            name: synology-credentials
+            key: password
+      - name: SECRET_NAME
+        value: "rl28-lrm.duckdns.org-wildcard-tls-secret-production"
+      - name: SECRET_NAMESPACE
+        value: "cert-manager"
+      - name: COMMON_NAME
+        value: "*.rl28-lrm.duckdns.org"
+      - name: KUBECONFIG_MODE
+        value: "incluster"
+      volumeMounts:
+      - name: kube-api-access
+        mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true  
+  volumes:
+    - name: kube-api-access
+      projected:
+        sources:
+          - serviceAccountToken:
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+                - key: ca.crt
+                  path: ca.crt
+          - downwardAPI:
+              items:
+                - path: namespace
+                  fieldRef:
+                    fieldPath: metadata.namespace
+  restartPolicy: Never
