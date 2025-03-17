@@ -24,3 +24,6 @@ debug/
 
 # Secrets
 secrets/
+
+# varios
+.DS_Store
