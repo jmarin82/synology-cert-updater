@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
       - name: synology-cert-updater
-        image: registry.rl28.net:5000/synology-cert-updater:latest
+        image: registry.local:5000/synology-cert-updater:latest
         # securityContext:
         #     privileged: true
         env:
