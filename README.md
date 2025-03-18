@@ -11,19 +11,22 @@ Existen múltiples opciones:
 ## Argo Events
 
 Esta opción me parece muy elegante al estar basada en eventos. La idea es que ante un evento originado por el cambio del secret, Argo genere un job con la tarea. Hay que tener en cuenta que si el certificado reside en otro namespace habrá que asignar permisos RBAC o bien copiar el certificado al namespace donde se ejecuta el job. 
-He probado a usar reflector para copiar el certificado en varios namespaces pero ha desencadenado en multitud de jobs que terminan en error. 
+He probado a usar reflector https://github.com/emberstack/kubernetes-reflector 
+para copiar el certificado en varios namespaces pero ha desencadenado en multitud de jobs que terminan en error. 
+Otras copciones:
+https://github.com/zakkg3/ClusterSecret
 
 # Secret
 Debemos de crear un secret para conectar a la NAS synology
-
+```
 kubectl -n cert-manager create secret generic synology-credentials \
   --from-literal=username='<username>' \
   --from-literal=password='<password>'
-
+```
 # Environment variables
 
 Estas son las variables globales que definiremos en el job:
-'''
+```
 "SYNOLOGY_URL": "https://host:5001",
 "SYNOLOGY_USER": "username",
 "SYNOLOGY_PASS": "password",
@@ -31,6 +34,6 @@ Estas son las variables globales que definiremos en el job:
 "SECRET_NAMESPACE": "cert-manager",
 "COMMON_NAME": "",
 "KUBECONFIG_MODE": "local"
-'''
+```
 
 # Mejoras
