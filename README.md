@@ -1,32 +1,41 @@
 # synology-cert-updater
-Update synology certificates generated as secrets in kubernetes.
-La idea es generar un job cuando se renueve un certificado que se almacenará como secret en nuestro cluster de kubernetes. 
-Lo más habitual es generar certificados de letsencrypt con cert-manager. 
+Automatically update Synology certificates stored as Kubernetes secrets.
 
-Existen múltiples opciones:
+## Overview
 
-## Cronjob
- La opción más básica es ejecutar un cronjob periódico. Se podría agregar una lógica externa para verificar antes si ha habido algún cambio en el certificado. 
+This tool triggers a job whenever a certificate stored as a Kubernetes secret is renewed. The most common approach is to generate certificates using Let's Encrypt via [Cert-Manager](https://cert-manager.io/).
 
-## Argo Events
+## Deployment Options
 
-Esta opción me parece muy elegante al estar basada en eventos. La idea es que ante un evento originado por el cambio del secret, Argo genere un job con la tarea. Hay que tener en cuenta que si el certificado reside en otro namespace habrá que asignar permisos RBAC o bien copiar el certificado al namespace donde se ejecuta el job. 
-He probado a usar reflector https://github.com/emberstack/kubernetes-reflector 
-para copiar el certificado en varios namespaces pero ha desencadenado en multitud de jobs que terminan en error. 
-Otras copciones:
-https://github.com/zakkg3/ClusterSecret
+### CronJob
 
-# Secret
-Debemos de crear un secret para conectar a la NAS synology
-```
+The simplest method is to schedule a periodic CronJob. External logic can be added to check whether the certificate has changed before executing the update.
+
+### Argo Events
+
+A more efficient, event-driven approach is to use [Argo Events](https://argoproj.github.io/argo-events/). When a secret is updated, Argo can trigger a job to handle the certificate update automatically.
+
+#### Considerations:
+
+- If the certificate is stored in a different namespace, proper **RBAC permissions** must be assigned, or the certificate must be copied to the namespace where the job runs.
+- I tested [Kubernetes Reflector](https://github.com/emberstack/kubernetes-reflector) to replicate secrets across multiple namespaces, but it resulted in multiple failing jobs.
+- An alternative approach is [ClusterSecret](https://github.com/zakkg3/ClusterSecret), which allows sharing secrets across namespaces more reliably.
+
+## Configuring the Secret
+
+A Kubernetes secret is required to authenticate with the Synology NAS. Create it using the following command:
+
+```sh
 kubectl -n cert-manager create secret generic synology-credentials \
   --from-literal=username='<username>' \
   --from-literal=password='<password>'
 ```
-# Environment variables
 
-Estas son las variables globales que definiremos en el job:
-```
+## Environment Variables
+
+The following global variables must be defined in the job:
+
+```sh
 "SYNOLOGY_URL": "https://host:5001",
 "SYNOLOGY_USER": "username",
 "SYNOLOGY_PASS": "password",
@@ -36,4 +45,4 @@ Estas son las variables globales que definiremos en el job:
 "KUBECONFIG_MODE": "local"
 ```
 
-# Mejoras
+## Potential Improvements
