@@ -154,7 +154,7 @@ def get_certificate_data(synology_url: str, common_name: str, session_id: str) -
         raise
 
 @log_exceptions
-def manage_synology_cert(cert_data: dict, cert_info: dict, session_id: str = ""):
+def manage_synology_cert(cert_data: dict, cert_info: dict | None, session_id: str = ""):
     """
     Updates or creates a new certificate on Synology, depending on whether a cert_id is provided or not.
 
@@ -208,8 +208,6 @@ if __name__ == "__main__":
         raise ValueError("sid y COMMON_NAME  must be defined.")
     cert_info = get_certificate_data(SYNOLOGY_URL, COMMON_NAME, sid)
     logging.info(f"Certificado actual: {cert_info}")
-    if cert_info is None:
-            raise ValueError("cert_info  must be defined.")
 
     try:
         response = manage_synology_cert(cert_data, cert_info=cert_info, session_id=sid)
